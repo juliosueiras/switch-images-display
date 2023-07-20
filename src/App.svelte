@@ -17,6 +17,8 @@
   } from "@smui/drawer/styled";
   import List, { Item, Text } from "@smui/list/styled";
   import Button from "@smui/button/styled";
+  import Switch from '@smui/switch/styled';
+  import FormField from '@smui/form-field/styled';
   import ImageList, {
     Item as ImageItem,
     Image,
@@ -27,7 +29,7 @@
   import Slider from "@smui/slider/styled";
   import TabBar from "@smui/tab-bar/styled";
   import Tab from "@smui/tab/styled";
-  import { writable } from "svelte/store";
+  import { get, writable } from "svelte/store";
   import { games } from "./store.js";
   import TopAppBar, {
     Row,
@@ -37,6 +39,7 @@
 
   let switchView = false;
   let switchSpineView = true;
+  let onlyShowInside = false;
   let nintendoData = writable({});
   let sliderValue = 22;
   const hlsConfig = {};
@@ -52,11 +55,11 @@
   let active = "";
   let activeTab = "Info";
   let searchValue = "";
+  let originalGames = [];
   let frontStyle = "";
   let backStyle = "";
   let spineStyle = "";
   let backgroundImageStyle = "";
-  let originalGames = [];
   let titleids = [];
 
   onMount(async () => {
@@ -64,7 +67,6 @@
       .then((response) => response.text())
       .then((data) => {
         let gamesArray = Papa.parse(data).data;
-        console.log(gamesArray);
         gamesArray.shift();
         gamesArray.pop();
         totalCount = gamesArray.length;
@@ -81,11 +83,9 @@
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has("code")) {
               const activeCode = urlParams.get("code");
-              console.log(activeCode);
               let found = $games.find((v) => {
                 return v[1] == activeCode;
               });
-              console.log(found);
               setActive(found[1], found[2]);
             }
           })
@@ -100,14 +100,6 @@
       });
   });
 
-  function handleKeyDown(event: CustomEvent | KeyboardEvent) {
-    games.set(
-      originalGames.filter(
-        (item) =>
-          item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1
-      )
-    );
-  }
   function markMainPage() {
     open = false;
     backgroundImageStyle = "";
@@ -119,6 +111,42 @@
   let title = "Switch Cabinet";
 
   $: document.title = title;
+
+  $: if (onlyShowInside) {
+      games.set(
+        originalGames.filter(
+          (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true')
+        )
+      );
+      totalCount = get(games).length
+    } else {
+      games.set(
+        originalGames.filter(
+          (item) =>
+            item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1
+        )
+      );
+      totalCount = get(games).length
+    }
+
+  function toggleInside(e) {
+    if (onlyShowInside) {
+      games.set(
+        originalGames.filter(
+          (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true')
+        )
+      );
+      totalCount = get(games).length
+    } else {
+      games.set(
+        originalGames.filter(
+          (item) =>
+            item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1
+        )
+      );
+      totalCount = get(games).length
+    }
+  }
 
   function setActive(value: string, titleId: string) {
     activeTab = "Info";
@@ -182,8 +210,11 @@
         bind:value={searchValue}
         label="Search"
         style="min-width: 250px;"
-        on:keydown={handleKeyDown}
       />
+      <FormField>
+        <Switch bind:checked={onlyShowInside} on:change={(e) => toggleInside(e)}/>
+        <span slot="label">Show Only Games with Inside Art</span>
+      </FormField>
       <List style="height: 350px;">
         {#each $games as game}
           <Item
