@@ -36,8 +36,88 @@
     Section,
     Title as AppBarTitle,
   } from "@smui/top-app-bar/styled";
+  import Select, { Option } from '@smui/select/styled';
+
+  let regions = [
+    {
+      name: "All",
+      key: "ALL",
+    },
+    {
+      name: "North America",
+      key: "NA",
+    },
+    {
+      name: "Europe",
+      key: "EU",
+    },
+    {
+      name: "Japan",
+      key: "JPN",
+    },
+    {
+      name: "Asia",
+      key: "ASIA",
+    },
+    {
+      name: "Taiwan/Hong Kong/China",
+      key: "CHT",
+    },
+    {
+      name: "Korea",
+      key: "KOR",
+    },
+  ];
+
+  let regionValue = 'ALL';
+  let publisherValue = 'All';
+  let limprintValue = 'None';
+  let publishers = [{
+    name: "All",
+    key: "All",
+  }];
+
+  let limprints = [
+    {
+      name: "None",
+      key: "None",
+    },
+    {
+      name: "Limited Run Games",
+      key: "LRG",
+    },
+    {
+      name: "Super Rare Games",
+      key: "SuRG",
+    },
+    {
+      name: "Super Rare Games Shorts",
+      key: "Shorts",
+    },
+    {
+      name: "Strictly Limited Games",
+      key: "SLG",
+    },
+    {
+      name: "Red Art Games",
+      key: "RAG",
+    },
+    {
+      name: "EastAsiaSoft",
+      key: "EAS",
+    },
+    {
+      name: "PixelHeart",
+      key: "PXH",
+    },
+    {
+      name: "Premium Edition Games",
+      key: "PEG",
+    },
+  ];
 
   let switchView = false;
+  let switchCartView = false;
   let switchSpineView = true;
   let onlyShowInside = false;
   let nintendoData = writable({});
@@ -72,6 +152,18 @@
         totalCount = gamesArray.length;
         originalGames = gamesArray;
         games.set(gamesArray);
+        const tempPublishers = originalGames.map((i) => {
+          return i[5]
+        })
+
+        tempPublishers.sort().unshift("All")
+
+        publishers = [...new Set(tempPublishers)].map((i) => {
+          return {
+            name: i,
+            key: i,
+          }
+        })
 
         fetch(
           "https://raw.githubusercontent.com/julesontheroad/titledb/master/ninshop.json"
@@ -112,41 +204,117 @@
 
   $: document.title = title;
 
-  $: if (onlyShowInside) {
-      games.set(
-        originalGames.filter(
-          (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true')
-        )
-      );
-      totalCount = get(games).length
+  $: if (limprintValue != "None") {
+    let tempGames = []
+    originalGames.filter(
+        (item) => item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1 && item[6] == limprintValue
+    ).forEach((item) => {
+        tempGames.push([
+          `${item[0]} [#${item[7]}]`,
+          item[1],
+          item[2],
+          item[3],
+          item[4],
+          item[5],
+          item[6],
+          item[7],
+        ])
+    })
+    games.set(
+      tempGames.sort((a,b) => a[7] - b[7])
+    );
+    totalCount = get(games).length
+  } else {
+    if (regionValue == "ALL") {
+    if (publisherValue == "All") {
+        if (onlyShowInside) {
+          games.set(
+            originalGames.filter(
+            (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true')
+            )
+          );
+          totalCount = get(games).length
+        } else {
+          games.set(
+            originalGames.filter(
+              (item) => item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1
+            )
+          );
+          totalCount = get(games).length
+        }
+      } else {
+        if (onlyShowInside) {
+          games.set(
+            originalGames.filter(
+            (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true') && item[5] == publisherValue
+            )
+          );
+          totalCount = get(games).length
+        } else {
+          games.set(
+            originalGames.filter(
+              (item) => item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1 && item[5] == publisherValue
+            )
+          );
+          totalCount = get(games).length
+        }
+      }
     } else {
-      games.set(
-        originalGames.filter(
-          (item) =>
-            item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1
-        )
-      );
-      totalCount = get(games).length
-    }
+      if (publisherValue == "All") {
+          if (onlyShowInside) {
+            games.set(
+              originalGames.filter(
+              (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true') && item[4] == regionValue
+              )
+            );
+            totalCount = get(games).length
+          } else {
+            games.set(
+              originalGames.filter(
+                (item) => item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1 && item[4] == regionValue
+              )
+            );
+            totalCount = get(games).length
+          }
+        } else {
+          if (onlyShowInside) {
+            games.set(
+              originalGames.filter(
+              (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true') && (item[4] == regionValue && item[5] == publisherValue)
+              )
+            );
+            totalCount = get(games).length
+          } else {
+            games.set(
+              originalGames.filter(
+                (item) => item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1 && (item[4] == regionValue && item[5] == publisherValue)
+              )
+            );
+            totalCount = get(games).length
+          }
+        }
+      }
+      }
 
-  function toggleInside(e) {
-    if (onlyShowInside) {
-      games.set(
-        originalGames.filter(
-          (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true')
-        )
-      );
-      totalCount = get(games).length
-    } else {
-      games.set(
-        originalGames.filter(
-          (item) =>
-            item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1
-        )
-      );
-      totalCount = get(games).length
-    }
-  }
+  //function toggleInside(e) {
+  //  if (onlyShowInside) {
+  //    games.set(
+  //      originalGames.filter(
+  //        (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true')
+  //      )
+  //    );
+  //    totalCount = get(games).length
+  //  } else {
+  //    games.set(
+  //      originalGames.filter(
+  //        (item) =>
+  //          item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1
+  //      )
+  //    );
+  //    totalCount = get(games).length
+  //  }
+  //}
+
 
   function setActive(value: string, titleId: string) {
     activeTab = "Info";
@@ -212,8 +380,40 @@
         style="min-width: 250px;"
       />
       <FormField>
-        <Switch bind:checked={onlyShowInside} on:change={(e) => toggleInside(e)}/>
+        <Switch disabled={limprintValue != "None"} bind:checked={onlyShowInside} />
         <span slot="label">Show Only Games with Inside Art</span>
+      </FormField>
+      <FormField>
+          <Select 
+            bind:value={regionValue}
+            disabled={limprintValue != "None"}
+            key={(region) => `${region ? region.key : ''}`}
+            label="Select Cart Region">
+            {#each regions as region}
+              <Option value={region.key}>{region.name}</Option>
+            {/each}
+          </Select>
+      </FormField>
+      <FormField>
+          <Select 
+            bind:value={publisherValue}
+            key={(publisher) => `${publisher ? publisher.key : ''}`}
+            disabled={limprintValue != "None"}
+            label="Select Publisher">
+            {#each publishers as publisher}
+              <Option value={publisher.key}>{publisher.name}</Option>
+            {/each}
+          </Select>
+      </FormField>
+      <FormField>
+          <Select 
+            bind:value={limprintValue}
+            key={(limprint) => `${limprint ? limprint.key : ''}`}
+            label="LimPrint List">
+            {#each limprints as limprint}
+              <Option value={limprint.key}>{limprint.name}</Option>
+            {/each}
+          </Select>
       </FormField>
       <List style="height: 350px;">
         {#each $games as game}
@@ -240,10 +440,21 @@
               <AppBarTitle>Switch Cabinet</AppBarTitle>
               <IconButton
                 class="material-icons"
-                on:click={() => (switchView = !switchView)}
+                on:click={() => {
+                  switchCartView = false
+                  switchView = !switchView
+                }}
                 >{#if !switchView}view_module{:else}view_column{/if}</IconButton
               >
-              {#if !switchView}
+              <IconButton
+                class="material-icons"
+                on:click={() => {
+                  switchView = false
+                  switchCartView = !switchCartView
+                }}
+                >{#if !switchCartView}style{:else}view_column{/if}</IconButton
+              >
+              {#if !switchView && !switchCartView}
                 <IconButton
                   class="material-icons"
                   on:click={() => (switchSpineView = !switchSpineView)}
@@ -266,6 +477,20 @@
                 on:click={() => setActive(game[1], game[2])}
               />
             </ImageItem>
+          {:else if switchCartView}
+            {#if game[1] != "AE99A_S" && game[1] != "AE981_S"}
+              <ImageItem
+                style="width: 70px; height: 100px; cursor: pointer;"
+                class="zoom"
+                >
+                <Image
+                  src="https://cdn.switch-images-julio.com/file/switch-images-julio/{game[1]}/cart-label.png"
+                  alt={game[0]}
+                  style="height: 100%;"
+                  on:click={() => setActive(game[1], game[2])}
+                  />
+              </ImageItem>
+            {/if}
           {:else}
             <ImageItem
               style={switchSpineView
