@@ -38,6 +38,7 @@
     Title as AppBarTitle,
   } from "@smui/top-app-bar/styled";
   import Select, { Option } from '@smui/select/styled';
+  import LazyImageLoader from "./lib/components/LazyImageLoader.svelte";
 
   let regions = [
     {
@@ -574,8 +575,8 @@
                 : "width: 400px; height: 24px;"}
               class="zoom"
             >
-              <Image
-              src="{base_url}/_resized/{game[1]}/spine.png"
+              <LazyImageLoader
+                src="{base_url}/_resized/{game[1]}/spine.png"
                 alt={game[0]}
                 style={switchSpineView
                   ? "height: 100%;"
