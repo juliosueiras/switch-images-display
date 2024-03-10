@@ -236,38 +236,11 @@
 
   function markMainPage() {
     open = false;
+    hide = false;
     backgroundImageStyle = "";
     active = "";
     title = "Switch Cabinet";
     mainPage = true;
-  }
-
-  function screenshot() {
-    html2canvas(document.querySelector("#book"), {
-      foreignObjectRendering: true,
-      removeContainer: false,
-      windowWidth: 600,
-      windowHeight: 600,
-      useCORS: true,
-      backgroundColor: null,
-      allowTaint: true,
-      scale: 10,
-    }).then(canvas => {
-      saveAs(canvas.toDataURL(), 'file-name.png');
-    });
-  }
-
-  function saveAs(uri, filename) {
-    var link = document.createElement('a');
-    if (typeof link.download === 'string') {
-      link.href = uri;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      window.open(uri);
-    }
   }
 
   let title = "Switch Cabinet";
@@ -365,25 +338,6 @@
         }
       }
       }
-
-  //function toggleInside(e) {
-  //  if (onlyShowInside) {
-  //    games.set(
-  //      originalGames.filter(
-  //        (item) => (item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1  && item[3] === 'true')
-  //      )
-  //    );
-  //    totalCount = get(games).length
-  //  } else {
-  //    games.set(
-  //      originalGames.filter(
-  //        (item) =>
-  //          item[0].toLowerCase().indexOf(searchValue.toLowerCase()) !== -1
-  //      )
-  //    );
-  //    totalCount = get(games).length
-  //  }
-  //}
 
   let base_url = "https://cdn.switch-images-julio.com/file/switch-images-julio";
   //let base_url = "http://localhost:5000/images";
@@ -647,12 +601,6 @@
             bind:value={sliderValue}
           />
         </main>
-        <Button style="min-width: 250px;"
-                variant="raised"
-                on:click={() => screenshot()}
-                >
-                <Label>Download</Label>
-        </Button>
       {:else if activeTab == "Info"}
         <div style="overflow: scroll; height: 93.5%;">
           {#each titleids as titleid}
