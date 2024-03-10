@@ -1,7 +1,6 @@
 <script lang="ts">
   import Papa from "papaparse";
   import { onMount } from "svelte";
-  import html2canvas from 'html2canvas';
   import LayoutGrid, { Cell } from "@smui/layout-grid/styled";
   import { Player, Hls } from "@vime/svelte";
   import Card, {
