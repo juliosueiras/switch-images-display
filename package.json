@@ -5,7 +5,7 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "sirv public --no-clear",
+    "start": "sirv public --no-clear -c --single",
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
@@ -19,8 +19,8 @@
     "@smui/icon-button": "^5.0.1",
     "@smui/image-list": "^5.0.1",
     "@smui/layout-grid": "^5.0.1",
-    "@smui/select": "^5.0.1",
     "@smui/paper": "^5.0.1",
+    "@smui/select": "^5.0.1",
     "@smui/tab": "^5.0.1",
     "@smui/tab-bar": "^5.0.1",
     "@smui/textfield": "^5.0.1",
@@ -59,6 +59,7 @@
     "@types/papaparse": "^5.3.1",
     "@vime/core": "^5.0.35",
     "@vime/svelte": "^5.0.35",
+    "html2canvas": "^1.4.1",
     "node-sass": "^6.0.1",
     "papaparse": "^5.3.1",
     "sirv-cli": "^1.0.0",

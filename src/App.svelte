@@ -1,6 +1,7 @@
 <script lang="ts">
   import Papa from "papaparse";
   import { onMount } from "svelte";
+  import html2canvas from 'html2canvas';
   import LayoutGrid, { Cell } from "@smui/layout-grid/styled";
   import { Player, Hls } from "@vime/svelte";
   import Card, {
@@ -103,6 +104,10 @@
       key: "RAG",
     },
     {
+      name: "B-Side Games",
+      key: "BSG",
+    },
+    {
       name: "EastAsiaSoft",
       key: "EAS",
     },
@@ -114,9 +119,16 @@
       name: "Premium Edition Games",
       key: "PEG",
     },
+    {
+      name: "1Print Games",
+      key: "1PG",
+    },
   ];
 
+  $: load = false;
+
   let switchView = false;
+  let hide = true;
   let switchCartView = false;
   let switchSpineView = true;
   let onlyShowInside = false;
@@ -127,6 +139,30 @@
     return value.replace(/\\x([0-9a-f]{1,4})/gi, function (m, c0) {
       return "\\u" + ("0000" + c0).slice(-4);
     });
+  }
+
+  let intersectionObserver;
+
+  function ensureIntersectionObserver() {
+    if (intersectionObserver) return;
+    intersectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const eventName = entry.isIntersecting ? 'enterViewport' : 'exitViewport';
+        entry.target.dispatchEvent(new CustomEvent(eventName));
+      });
+    });
+  }
+
+  function viewport(element) {
+    ensureIntersectionObserver();
+
+    intersectionObserver.observe(element);
+
+    return {
+      destroy() {
+        intersectionObserver.unobserve(element);
+      }
+    }
   }
 
   let totalCount = 0;
@@ -143,6 +179,12 @@
   let titleids = [];
 
   onMount(async () => {
+    const urlResult = new URLSearchParams(window.location.search);
+    if (urlResult.has("code")) {
+      hide = true;
+    } else { 
+      hide = false;
+    }
     fetch("../list.csv")
       .then((response) => response.text())
       .then((data) => {
@@ -198,6 +240,34 @@
     active = "";
     title = "Switch Cabinet";
     mainPage = true;
+  }
+
+  function screenshot() {
+    html2canvas(document.querySelector("#book"), {
+      foreignObjectRendering: true,
+      removeContainer: false,
+      windowWidth: 600,
+      windowHeight: 600,
+      useCORS: true,
+      backgroundColor: null,
+      allowTaint: true,
+      scale: 10,
+    }).then(canvas => {
+      saveAs(canvas.toDataURL(), 'file-name.png');
+    });
+  }
+
+  function saveAs(uri, filename) {
+    var link = document.createElement('a');
+    if (typeof link.download === 'string') {
+      link.href = uri;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      window.open(uri);
+    }
   }
 
   let title = "Switch Cabinet";
@@ -315,6 +385,8 @@
   //  }
   //}
 
+  let base_url = "https://cdn.switch-images-julio.com/file/switch-images-julio";
+  //let base_url = "http://localhost:5000/images";
 
   function setActive(value: string, titleId: string) {
     activeTab = "Info";
@@ -338,15 +410,15 @@
     }
 
     frontStyle = `
-      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.25) 25%, rgba(0, 0, 0, 0.15) 50%, rgba(255, 255, 255, 0) 100%), url("https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/${value}/insert.png"), url(none), url(none);
+      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.25) 25%, rgba(0, 0, 0, 0.15) 50%, rgba(255, 255, 255, 0) 100%), url("${base_url}/_resized/${value}/insert.png");
     `;
 
     backStyle = `
-      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.25) 25%, rgba(0, 0, 0, 0.15) 50%, rgba(255, 255, 255, 0) 100%), url(none), url(none), url("https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/${value}/insert.png");
+      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.25) 25%, rgba(0, 0, 0, 0.15) 50%, rgba(255, 255, 255, 0) 100%), url("${base_url}/_resized/${value}/insert.png");
     `;
 
     spineStyle = `
-      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.25) 25%, rgba(0, 0, 0, 0.15) 50%, rgba(255, 255, 255, 0) 100%), url(none), url("https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/${value}/spine.png"), url(none);
+      background-image: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.25) 25%, rgba(0, 0, 0, 0.15) 50%, rgba(255, 255, 255, 0) 100%), url("${base_url}/_resized/${value}/spine.png");
       background-position: -400% 100%, right top, center top, left top; background-size: 1000% 200%, auto 100%, auto 100%, auto 100%; transform: rotateY(-90deg) translateX(-24px);
     `;
 
@@ -357,6 +429,7 @@
       value,
       found[0],
       `/file/switch-images-julio/display/index.html?code=${value}`
+      //`/index.html?code=${value}`
     );
   }
 </script>
@@ -429,7 +502,7 @@
     </Content>
   </Drawer>
   <AppContent class="app-content" style={backgroundImageStyle}>
-    {#if mainPage}
+    {#if mainPage && !hide}
       <ImageList>
         <TopAppBar variant="static">
           <Row>
@@ -461,6 +534,9 @@
                   >autorenew</IconButton
                 >
               {/if}
+
+              <Label>All games individually scanned by me(discord: @juliosueiras)</Label>
+                
             </Section>
           </Row>
         </TopAppBar>
@@ -471,20 +547,20 @@
               class="zoom"
             >
               <Image
-                src="https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/{game[1]}/front.png"
+                src="{base_url}/_resized/{game[1]}/front.png"
                 alt={game[0]}
                 style="height: 100%;"
                 on:click={() => setActive(game[1], game[2])}
               />
             </ImageItem>
           {:else if switchCartView}
-            {#if game[1] != "AE99A_S" && game[1] != "AE981_S"}
+            {#if !game[1].includes("_S")}
               <ImageItem
                 style="width: 70px; height: 100px; cursor: pointer;"
                 class="zoom"
                 >
                 <Image
-                  src="https://cdn.switch-images-julio.com/file/switch-images-julio/{game[1]}/cart-label.png"
+                src="{base_url}/{game[1]}/cart-label.png"
                   alt={game[0]}
                   style="height: 100%;"
                   on:click={() => setActive(game[1], game[2])}
@@ -499,7 +575,7 @@
               class="zoom"
             >
               <Image
-                src="https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/{game[1]}/spine.png"
+              src="{base_url}/_resized/{game[1]}/spine.png"
                 alt={game[0]}
                 style={switchSpineView
                   ? "height: 100%;"
@@ -510,6 +586,7 @@
           {/if}
         {/each}
       </ImageList>
+
     {:else}
       <TabBar
         style="background-color: white;"
@@ -562,12 +639,20 @@
                 <div class="book_front-after" />
               </div>
             </div>
+            <img 
+              style="visibility: visible; position: absolute; width: 70px; height: 100px; top: 50%; left: 60%;" src="{base_url}/{active}/cart-label.png" />
           </div>
           <Slider
             style="flex-grow: 1; width: 300px;"
             bind:value={sliderValue}
           />
         </main>
+        <Button style="min-width: 250px;"
+                variant="raised"
+                on:click={() => screenshot()}
+                >
+                <Label>Download</Label>
+        </Button>
       {:else if activeTab == "Info"}
         <div style="overflow: scroll; height: 93.5%;">
           {#each titleids as titleid}
@@ -631,65 +716,65 @@
         </div>
       {:else if activeTab == "Front"}
         <a
-          href="https://cdn.switch-images-julio.com/file/switch-images-julio/{active}/front.png"
+        href="{base_url}/{active}/front.png"
           ><img
             class="switch-image"
             alt="front image"
-            src="https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/{active}/front.png"
+            src="{base_url}/_resized/{active}/front.png"
           /></a
         >
       {:else if activeTab == "Back"}
         <a
-          href="https://cdn.switch-images-julio.com/file/switch-images-julio/{active}/back.png"
+        href="{base_url}/{active}/back.png"
           ><img
             class="switch-image"
             alt="back image"
-            src="https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/{active}/back.png"
+            src="{base_url}/_resized/{active}/back.png"
           /></a
         >
       {:else if activeTab == "Spine"}
         <a
-          href="https://cdn.switch-images-julio.com/file/switch-images-julio/{active}/spine.png"
+        href="{base_url}/{active}/spine.png"
           ><img
             class="switch-spine-image"
             alt="spine image"
-            src="https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/{active}/spine.png"
+            src="{base_url}/_resized/{active}/spine.png"
           /></a
         >
       {:else if activeTab == "Insert"}
         <a
-          href="https://cdn.switch-images-julio.com/file/switch-images-julio/{active}/insert.png"
+        href="{base_url}/{active}/insert.png"
           ><img
             class="switch-large-image"
             alt="insert image"
-            src="https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/{active}/insert.png"
+            src="{base_url}/_resized/{active}/insert.png"
           /></a
         >
       {:else if activeTab == "Inside"}
         <a
-          href="https://cdn.switch-images-julio.com/file/switch-images-julio/{active}/inside.png"
+        href="{base_url}/{active}/inside.png"
           ><img
             class="switch-large-image"
             alt="inside image"
-            src="https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/{active}/inside.png"
+            src="{base_url}/_resized/{active}/inside.png"
           /></a
         >
       {:else if activeTab == "Cart"}
         <a
-          href="https://cdn.switch-images-julio.com/file/switch-images-julio/{active}/cart.png"
+        href="{base_url}/{active}/cart.png"
           ><img
             class="switch-cart-image"
             alt="cart image"
-            src="https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/{active}/cart.png"
+            src="{base_url}/_resized/{active}/cart.png"
           /></a
         >
       {:else if activeTab == "Cart Label"}
         <a
-          href="https://cdn.switch-images-julio.com/file/switch-images-julio/{active}/cart-label.png"
+        href="{base_url}/{active}/cart-label.png"
           ><img
             class="switch-cart-image"
             alt="cart-label image"
-            src="https://cdn.switch-images-julio.com/file/switch-images-julio/_resized/{active}/cart-label.png"
+            src="{base_url}/_resized/{active}/cart-label.png"
           /></a
         >
       {/if}
